@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hr_sql_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${DB_PASSWORD:-Your_Strong_Password123!}
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - hr_db_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "SA", "-P", "${DB_PASSWORD:-Your_Strong_Password123!}", "-Q", "SELECT 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hr_dotnet_api
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=${DB_NAME:-HRSystemDb};User Id=${DB_USER:-sa};Password=${DB_PASSWORD:-Your_Strong_Password123!};TrustServerCertificate=True;
+      - JwtSettings__Secret=${JWT_SECRET:-Your_Super_Secret_Key_For_JWT_Authentication_Must_Be_Long}
+      - JwtSettings__Issuer=${JWT_ISSUER:-IntelliHire}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-IntelliHireUsers}
+      - AIServiceUrl=http://ai-service:8000
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: hr_python_ai
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${AI_SECRET_KEY:-secret_key_to_communicate_between_dotnet_and_python}
+      - ALLOWED_ORIGINS=["http://localhost:5000", "http://localhost:3000"]
+    # If the app requires heavily CPU-intensive tasks, set resource limits properly in prod.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hr_react_ui
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  hr_db_data:

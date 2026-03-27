@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+bin/
+obj/
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# IDE & OS
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Build outputs
+/frontend/dist/
+/frontend/build/
+publish/
+
+# Secrets
+.env
+appsettings.Development.json
+appsettings.Production.json
+
+# Temporary files & Logs
+/tmp
+logs/
+*.log

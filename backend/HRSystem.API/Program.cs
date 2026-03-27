@@ -75,6 +75,42 @@ var app = builder.Build();
 app.UseMiddleware<HRSystem.API.Middleware.ExceptionHandlingMiddleware>();
 app.UseSerilogRequestLogging();
 
+// ============================================
+// Auto-Migration and Data Seeding
+// ============================================
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<HRSystem.Infrastructure.Data.HRSystemDbContext>();
+        context.Database.EnsureCreated(); // Creates DB if not exists (simpler than migration for quick demo)
+        
+        // Seed HR Admin User
+        if (!context.Users.Any(u => u.Email == "admin@hr.com"))
+        {
+            var admin = new HRSystem.Core.Entities.User
+            {
+                FirstName = "Admin",
+                LastName = "System",
+                Email = "admin@hr.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"), 
+                Role = HRSystem.Core.Enums.UserRole.Admin,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.Users.Add(admin);
+            context.SaveChanges();
+        }
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+    }
+}
+// ============================================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -23,9 +23,9 @@ public class AuthController : ControllerBase
         var result = await _authService.LoginAsync(request);
         
         if (result == null)
-            return Unauthorized(new { message = "Invalid email or password" });
+            return Unauthorized(HRSystem.Core.DTOs.Common.ApiResponse<string>.Fail("Invalid email or password"));
 
-        return Ok(result);
+        return Ok(HRSystem.Core.DTOs.Common.ApiResponse<AuthResponseDto>.Ok(result));
     }
 
     [HttpPost("register")]

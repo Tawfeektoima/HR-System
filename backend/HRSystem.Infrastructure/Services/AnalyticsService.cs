@@ -4,6 +4,7 @@ using HRSystem.Core.Interfaces.Services;
 using HRSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
+using HRSystem.Core.Enums;
 
 namespace HRSystem.Infrastructure.Services;
 
@@ -18,118 +19,77 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<DashboardStatsDto> GetDashboardStatsAsync()
     {
-        // Execute stored procedure
-        var result = new DashboardStatsDto(0,0,0,0,0,0,0,0,0);
+        var totalJobs = await _context.Jobs.CountAsync();
+        var openJobs = await _context.Jobs.CountAsync(j => j.Status == Core.Enums.JobStatus.Open);
+        var totalCandidates = await _context.Candidates.CountAsync();
+        var totalApplications = await _context.Applications.CountAsync();
+        var hires = await _context.Applications.CountAsync(a => a.Status == ApplicationStatus.Accepted);
+        var rejections = await _context.Applications.CountAsync(a => a.Status == ApplicationStatus.Rejected);
+        var activeInterviews = await _context.Interviews.CountAsync(i => i.ScheduledAt > DateTime.UtcNow);
         
-        using (var command = _context.Database.GetDbConnection().CreateCommand())
-        {
-            command.CommandText = "sp_GetDashboardStats";
-            command.CommandType = CommandType.StoredProcedure;
-            
-            await _context.Database.OpenConnectionAsync();
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                if (await reader.ReadAsync())
-                {
-                    result = new DashboardStatsDto(
-                        reader.GetInt32(0),
-                        reader.GetInt32(1),
-                        reader.GetInt32(2),
-                        reader.GetInt32(3),
-                        reader.GetInt32(4),
-                        reader.GetInt32(5),
-                        reader.GetInt32(6),
-                        reader.GetDecimal(7),
-                        reader.GetDecimal(8)
-                    );
-                }
-            }
-        }
-        return result;
+        decimal acceptanceRate = totalApplications > 0 ? (decimal)hires / totalApplications * 100 : 0m;
+        decimal avgTime = 0m; 
+
+        return new DashboardStatsDto(
+            openJobs,
+            totalJobs,
+            totalCandidates,
+            totalApplications,
+            hires,
+            rejections,
+            activeInterviews,
+            Math.Round(acceptanceRate, 2),
+            avgTime
+        );
     }
 
     public async Task<List<ApplicationsPerMonthDto>> GetApplicationsPerMonthAsync(int months = 6)
     {
-        var list = new List<ApplicationsPerMonthDto>();
-        using (var command = _context.Database.GetDbConnection().CreateCommand())
-        {
-            command.CommandText = "sp_GetApplicationsPerMonth";
-            command.CommandType = CommandType.StoredProcedure;
-            
-            var param = command.CreateParameter();
-            param.ParameterName = "@MonthsBack";
-            param.Value = months;
-            command.Parameters.Add(param);
-            
-            await _context.Database.OpenConnectionAsync();
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    list.Add(new ApplicationsPerMonthDto(
-                        reader.GetString(0),
-                        reader.GetInt32(1),
-                        reader.GetInt32(2),
-                        reader.GetInt32(3)
-                    ));
-                }
-            }
-        }
-        return list;
+        // Simplified LINQ grouping for SQLite compatibility
+        var startDate = DateTime.UtcNow.AddMonths(-months);
+        var data = await _context.Applications
+            .Where(a => a.AppliedAt >= startDate)
+            .GroupBy(a => new { a.AppliedAt.Year, a.AppliedAt.Month })
+            .Select(g => new ApplicationsPerMonthDto(
+                $"{g.Key.Year}-{g.Key.Month:D2}",
+                g.Count(),
+                g.Count(x => x.Status == ApplicationStatus.Accepted),
+                g.Count(x => x.Status == ApplicationStatus.Rejected)
+            ))
+            .OrderBy(x => x.MonthLabel)
+            .ToListAsync();
+
+        return data;
     }
 
     public async Task<List<PipelineFunnelDto>> GetPipelineFunnelAsync()
     {
-        var list = new List<PipelineFunnelDto>();
-        using (var command = _context.Database.GetDbConnection().CreateCommand())
-        {
-            command.CommandText = "sp_GetPipelineFunnel";
-            command.CommandType = CommandType.StoredProcedure;
-            
-            await _context.Database.OpenConnectionAsync();
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    list.Add(new PipelineFunnelDto(
-                        reader.GetString(0),
-                        reader.GetInt32(1),
-                        reader.GetDecimal(2)
-                    ));
-                }
-            }
-        }
-        return list;
+        var data = await _context.Applications
+            .GroupBy(a => a.Status)
+            .Select(g => new PipelineFunnelDto(
+                g.Key.ToString(),
+                g.Count(),
+                0m 
+            ))
+            .ToListAsync();
+
+        return data;
     }
 
     public async Task<List<TopJobDto>> GetTopJobsAsync(int count = 5)
     {
-        var list = new List<TopJobDto>();
-        using (var command = _context.Database.GetDbConnection().CreateCommand())
-        {
-            command.CommandText = "sp_GetTopJobsByApplications";
-            command.CommandType = CommandType.StoredProcedure;
-            
-            var param = command.CreateParameter();
-            param.ParameterName = "@TopN";
-            param.Value = count;
-            command.Parameters.Add(param);
-            
-            await _context.Database.OpenConnectionAsync();
-            using (var reader = await command.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                {
-                    list.Add(new TopJobDto(
-                        reader.GetInt32(0),
-                        reader.GetString(1),
-                        reader.GetString(2),
-                        reader.GetInt32(3),
-                        reader.IsDBNull(4) ? 0 : reader.GetDecimal(4)
-                    ));
-                }
-            }
-        }
-        return list;
+        var data = await _context.Jobs
+            .Select(j => new TopJobDto(
+                j.Id,
+                j.Title,
+                j.Department,
+                _context.Applications.Count(a => a.JobId == j.Id),
+                _context.Applications.Where(a => a.JobId == j.Id).Average(a => (decimal?)a.CvScore) ?? 0m
+            ))
+            .OrderByDescending(x => x.ApplicationCount)
+            .Take(count)
+            .ToListAsync();
+
+        return data;
     }
 }
