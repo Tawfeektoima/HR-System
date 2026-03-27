@@ -1,0 +1,12 @@
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.GeneratedMSBuildEditorConfig.editorconfig
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.AssemblyInfoInputs.cache
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.AssemblyInfo.cs
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.csproj.CoreCompileInputs.cache
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.sourcelink.json
+D:\try\HR-System\backend\HRSystem.Core\bin\Debug\net8.0\HRSystem.Core.deps.json
+D:\try\HR-System\backend\HRSystem.Core\bin\Debug\net8.0\HRSystem.Core.dll
+D:\try\HR-System\backend\HRSystem.Core\bin\Debug\net8.0\HRSystem.Core.pdb
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.dll
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\refint\HRSystem.Core.dll
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\HRSystem.Core.pdb
+D:\try\HR-System\backend\HRSystem.Core\obj\Debug\net8.0\ref\HRSystem.Core.dll
