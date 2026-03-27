@@ -15,7 +15,7 @@ public class AIService : IAIService
         _configuration = configuration;
     }
 
-    public async Task<AICvAnalysisResult> AnalyzeCvAsync(string filePath, int jobId)
+    public async Task<AICvAnalysisResult> AnalyzeCvAsync(string filePath, int jobId, string? jobRequirements = null)
     {
         var aiBaseUrl = _configuration["AIServiceUrl"] ?? "http://localhost:8000";
         var fileInfo = new FileInfo(filePath);
@@ -25,6 +25,11 @@ public class AIService : IAIService
         var fileStreamContent = new StreamContent(File.OpenRead(filePath));
         multipartFormContent.Add(fileStreamContent, name: "file", fileName: fileInfo.Name);
         multipartFormContent.Add(new StringContent(jobId.ToString()), name: "job_id");
+        
+        if (!string.IsNullOrWhiteSpace(jobRequirements))
+        {
+            multipartFormContent.Add(new StringContent(jobRequirements), name: "job_requirements");
+        }
 
         var response = await _httpClient.PostAsync($"{aiBaseUrl}/analyze-cv", multipartFormContent);
 

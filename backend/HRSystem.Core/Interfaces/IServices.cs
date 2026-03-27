@@ -68,7 +68,7 @@ public interface IAnalyticsService
 
 public interface IAIService
 {
-    Task<AICvAnalysisResult> AnalyzeCvAsync(string filePath, int jobId);
+    Task<AICvAnalysisResult> AnalyzeCvAsync(string filePath, int jobId, string? jobRequirements = null);
 }
 
 public record AICvAnalysisResult(
