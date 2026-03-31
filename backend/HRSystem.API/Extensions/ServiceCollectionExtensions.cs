@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -16,9 +17,18 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+
         services.AddDbContext<HRSystemDbContext>(options =>
-            options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
-            
+        {
+            // SQL Server (Docker / production) vs SQLite (local file)
+            if (connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+                options.UseSqlServer(connectionString);
+            else
+                options.UseSqlite(connectionString);
+        });
+
         return services;
     }
 
@@ -47,7 +57,20 @@ public static class ServiceCollectionExtensions
         services.AddScoped<INotificationService, NotificationService>();
         
         services.AddHttpClient<IAIService, AIService>();
-        
+
+        services.AddHttpClient("DeepSeek", (sp, client) =>
+        {
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            var baseUrl = cfg["DeepSeek:BaseUrl"] ?? "https://api.deepseek.com/v1/";
+            if (!baseUrl.EndsWith('/')) baseUrl += "/";
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromMinutes(5);
+            var key = cfg["DeepSeek:ApiKey"];
+            if (!string.IsNullOrWhiteSpace(key))
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
+        });
+        services.AddScoped<ICvComparisonService, DeepSeekCvComparisonService>();
+
         return services;
     }
 

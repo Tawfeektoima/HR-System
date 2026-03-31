@@ -4,6 +4,7 @@ using HRSystem.Core.DTOs.Application;
 using HRSystem.Core.DTOs.Interview;
 using HRSystem.Core.DTOs.Auth;
 using HRSystem.Core.DTOs.Analytics;
+using HRSystem.Core.DTOs.AI;
 using HRSystem.Core.DTOs.Common;
 using Microsoft.AspNetCore.Http;
 
@@ -69,6 +70,14 @@ public interface IAnalyticsService
 public interface IAIService
 {
     Task<AICvAnalysisResult> AnalyzeCvAsync(string filePath, int jobId, string? jobRequirements = null);
+}
+
+/// <summary>
+/// Compares all CVs submitted for a job (via DeepSeek) and assigns a relative score to each application.
+/// </summary>
+public interface ICvComparisonService
+{
+    Task<CvComparisonResponseDto> CompareCvScoresForJobAsync(int jobId, CancellationToken cancellationToken = default);
 }
 
 public record AICvAnalysisResult(

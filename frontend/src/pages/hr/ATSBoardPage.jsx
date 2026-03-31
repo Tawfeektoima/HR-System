@@ -40,7 +40,10 @@ const ATSBoardPage = () => {
     ));
 
     try {
-      await applicationsService.updateStatus(appId, { status: newStatus, notes: 'Moved via Kanban board' });
+      await applicationsService.updateStatus(appId, {
+        status: newStatus,
+        hrNotes: 'Moved via Kanban board',
+      });
     } catch (err) {
       console.error("Failed to update status", err);
       // Revert if error occurs logically

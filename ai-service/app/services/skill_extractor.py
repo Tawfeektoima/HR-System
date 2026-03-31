@@ -1,19 +1,5 @@
-import spacy
-from typing import List, Tuple
 import re
-
-# Load English tokenizer, tagger, parser, NER and word vectors
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    # Fallback if not downloaded
-    import spacy.cli
-    spacy.cli.download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
-
-from spacy.matcher import PhraseMatcher
-
-matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+from typing import List, Tuple
 
 # Comprehensive modern tech skills library
 TECH_SKILLS = [
@@ -26,19 +12,16 @@ TECH_SKILLS = [
     "agile", "scrum", "kanban", "figma", "adobe xd", "photoshop", "jira", "git", "github"
 ]
 
-patterns = [nlp.make_doc(text) for text in TECH_SKILLS]
-matcher.add("TechSkills", patterns)
-
 def extract_skills(text: str) -> List[str]:
-    """Uses spaCy PhraseMatcher to reliably extract skills from unstructured text."""
-    doc = nlp(text)
-    matches = matcher(doc)
-    
+    """Uses simple regex / word search if spaCy is not available."""
+    text_lower = text.lower()
     found_skills = set()
-    for match_id, start, end in matches:
-        span = doc[start:end]
-        found_skills.add(span.text.lower())
-        
+    
+    for skill in TECH_SKILLS:
+        # Use regex to find whole word matches
+        if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
+            found_skills.add(skill)
+            
     # Return formatted capitalized skills
     return [skill.title() if len(skill) > 3 else skill.upper() for skill in found_skills]
 

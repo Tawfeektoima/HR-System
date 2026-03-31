@@ -1,0 +1,48 @@
+# Lightweight stack: SQLite API + AI + static frontend (no SQL Server).
+# From repo root: docker compose -f docker-compose.simple.yml up --build
+#
+# Then open: http://localhost:3000  |  API: http://localhost:5000/swagger
+
+version: "3.8"
+
+services:
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: hr_python_ai
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${AI_SECRET_KEY:-secret_key_to_communicate_between_dotnet_and_python}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hr_dotnet_api
+    depends_on:
+      - ai-service
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/HRSystem.db
+      - AIServiceUrl=http://ai-service:8000
+    volumes:
+      - hr_sqlite:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api
+    container_name: hr_react_ui
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  hr_sqlite:

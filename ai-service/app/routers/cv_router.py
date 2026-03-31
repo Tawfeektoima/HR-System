@@ -66,3 +66,25 @@ async def analyze_cv(
                 os.remove(temp_path)
             except:
                 pass
+
+@router.post("/extract-text")
+async def extract_text_only(file: UploadFile = File(...)):
+    temp_path = ""
+    try:
+        temp_dir = "/tmp" if os.name != 'nt' else os.getenv("TEMP", "C:/Temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_path = os.path.join(temp_dir, file.filename)
+        
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+            
+        raw_text = parse_cv(temp_path)
+        return {"text": raw_text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except:
+                pass

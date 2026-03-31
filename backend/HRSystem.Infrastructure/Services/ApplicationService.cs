@@ -99,7 +99,8 @@ public class ApplicationService : IApplicationService
         
         try
         {
-            var aiResult = await _aiService.AnalyzeCvAsync(fullPath, dto.JobId, job.Requirements);
+            var jobContext = $"Description: {job.Description}\nRequirements: {job.Requirements}";
+            var aiResult = await _aiService.AnalyzeCvAsync(fullPath, dto.JobId, jobContext);
             
             app.CvScore = aiResult.Score;
             candidate.AiSummary = aiResult.Summary;

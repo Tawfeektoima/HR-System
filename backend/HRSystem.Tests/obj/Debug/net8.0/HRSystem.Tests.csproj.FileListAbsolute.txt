@@ -199,3 +199,4 @@ D:\try\HR-System\backend\HRSystem.Tests\bin\Debug\net8.0\runtimes\win-arm\native
 D:\try\HR-System\backend\HRSystem.Tests\bin\Debug\net8.0\runtimes\win-arm64\native\e_sqlite3.dll
 D:\try\HR-System\backend\HRSystem.Tests\bin\Debug\net8.0\runtimes\win-x64\native\e_sqlite3.dll
 D:\try\HR-System\backend\HRSystem.Tests\bin\Debug\net8.0\runtimes\win-x86\native\e_sqlite3.dll
+D:\try\HR-System\backend\HRSystem.Tests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll

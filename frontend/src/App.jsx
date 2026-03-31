@@ -8,6 +8,9 @@ import DashboardPage from './pages/hr/DashboardPage';
 import LoginPage from './pages/auth/LoginPage';
 import ApplyPage from './pages/public/ApplyPage';
 import ATSBoardPage from './pages/hr/ATSBoardPage';
+import HRJobsPage from './pages/hr/HRJobsPage';
+import CandidatesPage from './pages/hr/CandidatesPage';
+import InterviewsPage from './pages/hr/InterviewsPage';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
       <Route path="/hr" element={<ProtectedRoute><HRLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/hr/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="jobs" element={<HRJobsPage />} />
+        <Route path="candidates" element={<CandidatesPage />} />
+        <Route path="interviews" element={<InterviewsPage />} />
         <Route path="applications" element={<ATSBoardPage />} />
       </Route>
       

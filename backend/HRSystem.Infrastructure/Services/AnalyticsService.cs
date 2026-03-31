@@ -64,16 +64,22 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<List<PipelineFunnelDto>> GetPipelineFunnelAsync()
     {
-        var data = await _context.Applications
+        var total = await _context.Applications.CountAsync();
+        if (total == 0)
+            return new List<PipelineFunnelDto>();
+
+        var grouped = await _context.Applications
             .GroupBy(a => a.Status)
-            .Select(g => new PipelineFunnelDto(
-                g.Key.ToString(),
-                g.Count(),
-                0m 
-            ))
+            .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToListAsync();
 
-        return data;
+        return grouped
+            .OrderBy(x => (int)x.Status)
+            .Select(x => new PipelineFunnelDto(
+                x.Status.ToString(),
+                x.Count,
+                Math.Round((decimal)x.Count / total * 100m, 2)))
+            .ToList();
     }
 
     public async Task<List<TopJobDto>> GetTopJobsAsync(int count = 5)

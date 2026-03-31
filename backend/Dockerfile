@@ -20,7 +20,10 @@ RUN dotnet publish "HRSystem.API.csproj" -c Release -o /app/publish /p:UseAppHos
 # Runtime Stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+RUN mkdir -p /app/data
 COPY --from=build /app/publish .
+
+ENV ASPNETCORE_URLS=http://+:8080
 
 # Expose ports
 EXPOSE 8080

@@ -29,5 +29,11 @@ export const jobsService = {
   deleteJob: async (id) => {
     const response = await api.delete(`/jobs/${id}`);
     return response.data;
-  }
+  },
+
+  /** DeepSeek: compare all CVs for this job and update CvScore per application */
+  compareCandidates: async (jobId) => {
+    const response = await api.post(`/jobs/${jobId}/compare-candidates`);
+    return response.data;
+  },
 };
