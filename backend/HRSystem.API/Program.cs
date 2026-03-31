@@ -86,7 +86,9 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<HRSystem.Infrastructure.Data.HRSystemDbContext>();
         context.Database.EnsureCreated(); // Creates DB if not exists (simpler than migration for quick demo)
         
+        // ============================================
         // Seed HR Admin User
+        // ============================================
         if (!context.Users.Any(u => u.Email == "admin@hr.com"))
         {
             var admin = new HRSystem.Core.Entities.User
@@ -100,6 +102,89 @@ using (var scope = app.Services.CreateScope())
                 CreatedAt = DateTime.UtcNow
             };
             context.Users.Add(admin);
+            context.SaveChanges();
+        }
+
+        // ============================================
+        // Seed Jobs
+        // ============================================
+        if (!context.Jobs.Any())
+        {
+            var jobs = new List<HRSystem.Core.Entities.Job>
+            {
+                new HRSystem.Core.Entities.Job { 
+                    Title = "Call Center Representative (Fluent English)", 
+                    Department = "Customer Operations", 
+                    Description = "Handle inbound calls from US/UK customers. Requires near-native English fluency and excellent communication.",
+                    Requirements = "Fluent English (C1/C2), Prior experience in CS, Shift flexibility.",
+                    Location = "Cairo, Egypt",
+                    IsRemote = false,
+                    Status = HRSystem.Core.Enums.JobStatus.Open
+                },
+                new HRSystem.Core.Entities.Job { 
+                    Title = "Senior Full Stack Developer (.NET/React)", 
+                    Department = "Engineering", 
+                    Description = "Build and maintain our core HR platform.",
+                    Requirements = "5+ years C#, React, SQL Server/SQLite, Docker.",
+                    Location = "Dubai, UAE",
+                    IsRemote = true,
+                    Status = HRSystem.Core.Enums.JobStatus.Open
+                },
+                new HRSystem.Core.Entities.Job { 
+                    Title = "Social Media Moderator", 
+                    Department = "Marketing", 
+                    Description = "Moderate comments and interact with users on Facebook and Instagram.",
+                    Requirements = "Arabic/English fluency, Creative writing skills.",
+                    Location = "Riyadh, SA",
+                    IsRemote = true,
+                    Status = HRSystem.Core.Enums.JobStatus.Closed
+                }
+            };
+            context.Jobs.AddRange(jobs);
+            context.SaveChanges();
+        }
+
+        // ============================================
+        // Seed Candidates & Applications
+        // ============================================
+        if (!context.Applications.Any())
+        {
+            var callCenterJob = context.Jobs.First(j => j.Title.Contains("Call Center"));
+            var devJob = context.Jobs.First(j => j.Title.Contains("Full Stack"));
+
+            var candidates = new List<HRSystem.Core.Entities.Candidate>
+            {
+                new HRSystem.Core.Entities.Candidate { FirstName = "Ahmed", LastName = "Ali", Email = "ahmed.ali@example.com", ExperienceYears = 2, EducationLevel = "Bachelor of Commerce", Phone = "01012345678" },
+                new HRSystem.Core.Entities.Candidate { FirstName = "Sarah", LastName = "Johnson", Email = "sarah.j@example.com", ExperienceYears = 4, EducationLevel = "Bachelor of Arts", Phone = "01187654321" },
+                new HRSystem.Core.Entities.Candidate { FirstName = "John", LastName = "Doe", Email = "john.doe@example.com", ExperienceYears = 1, EducationLevel = "High School Diploma", Phone = "01234567890" },
+                new HRSystem.Core.Entities.Candidate { FirstName = "Mona", LastName = "Sami", Email = "mona.s@example.com", ExperienceYears = 3, EducationLevel = "Bachelor of Science", Phone = "01598765432" },
+                new HRSystem.Core.Entities.Candidate { FirstName = "Rami", LastName = "Fares", Email = "rami.f@example.com", ExperienceYears = 6, EducationLevel = "Master of IT", Phone = "01000001234" }
+            };
+
+            context.Candidates.AddRange(candidates);
+            context.SaveChanges();
+
+            var applications = new List<HRSystem.Core.Entities.Application>
+            {
+                // Call Center Applications
+                new HRSystem.Core.Entities.Application { CandidateId = candidates[0].Id, JobId = callCenterJob.Id, Status = HRSystem.Core.Enums.ApplicationStatus.Applied, CvScore = 85, AppliedAt = DateTime.UtcNow.AddDays(-2) },
+                new HRSystem.Core.Entities.Application { CandidateId = candidates[1].Id, JobId = callCenterJob.Id, Status = HRSystem.Core.Enums.ApplicationStatus.PhoneInterview, CvScore = 92, AppliedAt = DateTime.UtcNow.AddDays(-5) },
+                new HRSystem.Core.Entities.Application { CandidateId = candidates[2].Id, JobId = callCenterJob.Id, Status = HRSystem.Core.Enums.ApplicationStatus.Rejected, CvScore = 45, AppliedAt = DateTime.UtcNow.AddDays(-10) },
+                
+                // Dev Applications
+                new HRSystem.Core.Entities.Application { CandidateId = candidates[3].Id, JobId = devJob.Id, Status = HRSystem.Core.Enums.ApplicationStatus.TechnicalInterview, CvScore = 78, AppliedAt = DateTime.UtcNow.AddDays(-1) },
+                new HRSystem.Core.Entities.Application { CandidateId = candidates[4].Id, JobId = devJob.Id, Status = HRSystem.Core.Enums.ApplicationStatus.Accepted, CvScore = 95, AppliedAt = DateTime.UtcNow.AddDays(-15) }
+            };
+
+            context.Applications.AddRange(applications);
+            context.SaveChanges();
+
+            // Link CV placeholder file paths
+            foreach (var application in applications)
+            {
+                var candidate = candidates.First(c => c.Id == application.CandidateId);
+                candidate.CvFilePath = $"uploads/cvs/cv_{candidate.FirstName.ToLower()}.txt";
+            }
             context.SaveChanges();
         }
     }
